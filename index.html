@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bunker</title>
+<style>
+:root{
+  --bg:#f4f1ea; --card:#ffffff; --ink:#1c1b19; --sub:#6b665c;
+  --accent:#b3401f; --accent2:#2f5d4f; --line:#e2ddd0; --danger:#a33;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#17140f; --card:#231f18; --ink:#f1ece1; --sub:#a89f8d;
+    --accent:#e2703a; --accent2:#6fb79a; --line:#3a352a;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#17140f; --card:#231f18; --ink:#f1ece1; --sub:#a89f8d;
+  --accent:#e2703a; --accent2:#6fb79a; --line:#3a352a;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px); height:100%;}
+*{box-sizing:border-box;}
+body{
+  margin:0; height:100%; background:var(--bg); color:var(--ink);
+  font-family:Georgia,'Iowan Old Style',serif;
+  display:flex; flex-direction:column; align-items:center;
+  padding:24px 16px 40px;
+}
+h1{
+  font-family:'Trebuchet MS',sans-serif; letter-spacing:4px; text-transform:uppercase;
+  font-size:1.4rem; margin:4px 0 2px; color:var(--accent);
+}
+.sub{color:var(--sub); font-size:.85rem; margin-bottom:20px; text-align:center; max-width:380px;}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:22px; width:100%; max-width:420px; box-shadow:0 4px 18px rgba(0,0,0,.08);
+  margin-bottom:16px;
+}
+label{display:block; font-size:.8rem; color:var(--sub); margin:14px 0 6px; font-family:'Trebuchet MS',sans-serif;}
+input,select{
+  width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line);
+  background:var(--bg); color:var(--ink); font-size:1rem; font-family:inherit;
+}
+button{
+  font-family:'Trebuchet MS',sans-serif; cursor:pointer; border:none; border-radius:8px;
+  padding:12px 18px; font-size:.95rem; font-weight:600; letter-spacing:.5px;
+}
+.btn-main{background:var(--accent); color:#fff; width:100%; margin-top:18px;}
+.btn-ghost{background:transparent; border:1px solid var(--line); color:var(--ink); width:100%; margin-top:10px;}
+.scenario{
+  background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:18px; width:100%; max-width:420px; margin-bottom:16px; font-size:.9rem; line-height:1.5;
+}
+.scenario b{color:var(--accent);}
+.trait{
+  display:flex; justify-content:space-between; align-items:baseline;
+  padding:10px 0; border-bottom:1px dashed var(--line); font-size:.95rem;
+}
+.trait:last-child{border-bottom:none;}
+.trait .k{color:var(--sub); font-size:.78rem; text-transform:uppercase; letter-spacing:.5px; font-family:'Trebuchet MS',sans-serif;}
+.trait .v{text-align:right; max-width:60%; cursor:pointer;}
+.hidden-v{filter:blur(6px); user-select:none;}
+.code-box{
+  font-family:'Trebuchet MS',sans-serif; font-size:2.2rem; letter-spacing:6px; text-align:center;
+  color:var(--accent); font-weight:700; margin:10px 0;
+}
+.warn{color:var(--danger); font-size:.8rem; margin-top:10px; text-align:center;}
+.hint{color:var(--sub); font-size:.78rem; margin-top:6px;}
+.screen{width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center;}
+.hide{display:none;}
+.nav-row{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin-bottom:10px;}
+.nav-btn{background:var(--card); border:1px solid var(--line); color:var(--ink); font-size:1.2rem; padding:8px 16px;}
+.nav-label{font-family:'Trebuchet MS',sans-serif; font-size:.85rem; color:var(--sub); text-align:center;}
+.trait.ability{ background:rgba(179,64,31,0.06); border-radius:8px; padding:10px 8px; border-bottom:none; margin-bottom:6px;}
+.trait.ability .k{color:var(--accent);}
+.trait.ability .v{font-weight:600;}
+.trait .v.self{cursor:default;}
+.eye{font-size:.72rem; color:var(--accent2); margin-left:6px; white-space:nowrap;}
+</style>
+</head>
+<body>
+
+<h1>Bunker</h1>
+<div class="sub" id="tagline">A cross-device apocalypse party game — no server, no accounts. Swipe between players; nothing shows until it's actually been said out loud.</div>
+
+<div class="screen" id="home">
+  <div class="card">
+    <button class="btn-main" onclick="show('hostSetup')">Host a new game</button>
+    <button class="btn-ghost" onclick="show('join')">Join a game</button>
+  </div>
+</div>
+
+<div class="screen hide" id="hostSetup">
+  <div class="card">
+    <label>Number of players</label>
+    <input type="number" id="numPlayers" min="3" max="12" value="6">
+    <label>Catastrophe difficulty</label>
+    <select id="difficulty">
+      <option value="mild">Mild</option>
+      <option value="grim">Grim</option>
+      <option value="absurd">Absurd</option>
+    </select>
+    <button class="btn-main" onclick="hostCreate()">Create game</button>
+    <button class="btn-ghost" onclick="show('home')">Back</button>
+  </div>
+</div>
+
+<div class="screen hide" id="hostResult">
+  <div class="card" style="text-align:center;">
+    <div class="hint">Tell everyone out loud:</div>
+    <div class="code-box" id="codeDisplay"></div>
+    <div class="hint" id="hostSummary"></div>
+    <div class="hint" style="margin-top:10px;">Everyone opens this same link, taps "Join a game", enters the code + these settings, and picks a different player number (1, 2, 3...).</div>
+    <button class="btn-main" onclick="goToJoinAsHost()">Continue as a player</button>
+    <button class="btn-ghost" onclick="show('home')">Back to menu</button>
+  </div>
+</div>
+
+<div class="screen hide" id="join">
+  <div class="card">
+    <label>Number of players (total)</label>
+    <input type="number" id="jNumPlayers" min="3" max="12" value="6">
+    <label>Catastrophe difficulty</label>
+    <select id="jDifficulty">
+      <option value="mild">Mild</option>
+      <option value="grim">Grim</option>
+      <option value="absurd">Absurd</option>
+    </select>
+    <label>Game code</label>
+    <input type="text" id="jCode" maxlength="4" placeholder="e.g. 4821">
+    <label>Your player number</label>
+    <input type="number" id="jPlayerNum" min="1" max="12" value="1">
+    <button class="btn-main" onclick="joinGame()">Show my card</button>
+    <button class="btn-ghost" onclick="show('home')">Back</button>
+    <div class="warn" id="joinWarn"></div>
+  </div>
+</div>
+
+<div class="screen hide" id="cardView">
+  <div class="scenario" id="scenarioBox"></div>
+  <div class="nav-row">
+    <button class="nav-btn" onclick="navPlayer(-1)">&larr;</button>
+    <div class="nav-label" id="navLabel"></div>
+    <button class="nav-btn" onclick="navPlayer(1)">&rarr;</button>
+  </div>
+  <div class="card">
+    <div id="traitsBox"></div>
+    <div class="hint" id="cardHint" style="margin-top:12px; text-align:center;"></div>
+  </div>
+  <button class="btn-ghost" onclick="show('home')">New / different game</button>
+</div>
+
+<script>
+const catastrophes = {
+  mild: [
+    "A prolonged volcanic winter has blocked out the sun for years.",
+    "A engineered crop blight has collapsed the global food supply.",
+    "Runaway climate feedback loops have made the surface barely livable.",
+    "A worldwide pandemic has emptied the cities."
+  ],
+  grim: [
+    "Nuclear war between rival powers has left the surface irradiated.",
+    "A rogue AI seized control of infrastructure and turned the drones on people.",
+    "An asteroid impact triggered a years-long ash winter.",
+    "A bioweapon leak turned most of the population into feral, aggressive husks."
+  ],
+  absurd: [
+    "Giant mutant insects, grown from radioactive fertilizer, now rule the surface.",
+    "A dimensional rift opened and something ancient crawled out of it.",
+    "The moon cracked in half and its debris is raining down on Earth.",
+    "A failed weather-control experiment triggered permanent planet-wide hurricanes."
+  ]
+};
+const bunkerFacts = [
+  "The bunker has enough supplies for {n} people for 5 years.",
+  "The bunker has enough supplies for {n} people for 2 years, after which a supply drop is expected.",
+  "The bunker has enough supplies for {n} people for 10 years, but the air filtration is failing.",
+  "The bunker has enough supplies for {n} people for 3 years, and a small hydroponics bay."
+];
+const professions = ["Surgeon","Electrician","Farmer","Ex-soldier","Teacher","Nuclear engineer","Chef","Plumber","Biologist","Unemployed influencer","Priest","Locksmith","Psychologist","Mechanic","Botanist","Ex-convict","Politician","Comedian","Architect","Veterinarian"];
+const healths = ["Perfect health","Chronic insomnia","Missing a leg (prosthetic)","Mild asthma","Colorblind","Recovering alcoholic","Deaf in one ear","Diabetic, needs insulin","Terminal illness, 2 years left","Severe allergies","Pregnant (3rd trimester)","Heart condition, needs medication","Perfect health, but a hypochondriac"];
+const hobbies = ["Plays the violin","Amateur boxer","Grows bonsai trees","Competitive chess player","Taxidermist","Stand-up comedian (bad)","Marathon runner","Beekeeper","Collects vinyl records","Amateur astronomer","Whittles wood","Competitive eater","Speaks 5 languages","Escape room designer"];
+const phobias = ["Claustrophobia","Fear of the dark","Fear of blood","Fear of deep water","No known fears","Fear of crowds","Fear of silence","Fear of fire","Fear of being alone","Fear of authority"];
+const baggageItems = ["A box of antibiotics","A generator with no fuel","A crate of seeds","A working shortwave radio","A locked safe, no key","A dog","A stash of alcohol","A rifle with 3 bullets","A library of books","A water purifier","A guitar","Nothing but the clothes on their back"];
+const funFacts = ["Once survived being lost at sea for a week","Was on a reality TV show","Has a secret twin","Is wanted by the police in another country","Saved a child from a burning building","Cheated on every exam in school","Has never left their home country","Was once declared legally dead","Invented a minor household product","Is a former child prodigy"];
+const agesGenders = ["Woman, 24","Man, 31","Nonbinary, 27","Woman, 45","Man, 58","Woman, 19","Man, 67","Woman, 33","Man, 22","Nonbinary, 40"];
+const specials = ["Can fix almost any machine with scrap parts","Knows basic field surgery","Fluent in Morse code","Trained in hand-to-hand combat","Can identify edible plants by sight","Has photographic memory","Excellent at rationing supplies","Charismatic — great at defusing arguments","Skilled forager and hunter","No special skill, just lucky"];
+const abilities = [
+  "Swap your Health with any other player's Health.",
+  "Swap your Profession with any other player's Profession.",
+  "Swap your Hobby with any other player's Hobby.",
+  "Swap your Phobia with any other player's Phobia.",
+  "Swap your Baggage item with any other player's Baggage item.",
+  "Swap your Special skill with any other player's Special skill.",
+  "Discard your Phobia — you now have none.",
+  "Discard your Health condition — you now have perfect health.",
+  "Look at any one hidden trait of any player before it's revealed.",
+  "Copy any player's Profession as your own (they keep theirs too).",
+  "Copy any player's Special skill as your own (they keep theirs too).",
+  "Trade your Age/Gender with any other player.",
+  "Everyone must reveal their Hobby right now.",
+  "Everyone must reveal their Baggage item right now.",
+  "Everyone must reveal their Phobia right now.",
+  "Everyone must reveal their Fun fact right now.",
+  "Force any one player to reveal one hidden trait of your choice, right now.",
+  "Force two other players to swap one trait of your choice.",
+  "Hide one of your already-revealed traits again — deny it happened.",
+  "Force any player to discard one trait of your choice permanently."
+];
+
+function hashStr(str){
+  let h = 0;
+  for(let i=0;i<str.length;i++){ h = (Math.imul(31,h) + str.charCodeAt(i)) | 0; }
+  return h;
+}
+function mulberry32(seed){
+  let a = seed;
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = (t + Math.imul(t ^ t >>> 7, 61 | t)) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function pick(arr, rng){ return arr[Math.floor(rng()*arr.length)]; }
+function shuffle(arr, rng){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+function generateGame(code, n, difficulty){
+  const seed = hashStr(code + "|" + n + "|" + difficulty);
+  const rng = mulberry32(seed);
+  const scenario = pick(catastrophes[difficulty], rng);
+  const fact = pick(bunkerFacts, rng).replace("{n}", Math.max(3, n - Math.floor(n/3)));
+  const profs = shuffle(professions, rng).slice(0, n);
+  const abilityPicks = shuffle(abilities, rng).slice(0, n);
+  const players = [];
+  for(let i=0;i<n;i++){
+    players.push({
+      profession: profs[i],
+      ageGender: pick(agesGenders, rng),
+      health: pick(healths, rng),
+      hobby: pick(hobbies, rng),
+      phobia: pick(phobias, rng),
+      baggage: pick(baggageItems, rng),
+      fact: pick(funFacts, rng),
+      special: pick(specials, rng),
+      ability: abilityPicks[i]
+    });
+  }
+  return { scenario, fact, players };
+}
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hide'));
+  document.getElementById(id).classList.remove('hide');
+}
+
+const traitKeys = ["ageGender","profession","health","hobby","phobia","special","ability","baggage","fact"];
+const traitLabels = {ageGender:"Identity", profession:"Profession", health:"Health", hobby:"Hobby", phobia:"Phobia", special:"Special skill", ability:"⚡ Ability", baggage:"Baggage item", fact:"Fun fact"};
+
+let state = null; // {code, n, diff, game, myNum, viewingNum, revealMap}
+
+function revealStorageKey(code, n, diff){ return "bunker_reveal_" + code + "_" + n + "_" + diff; }
+
+function loadRevealMap(code, n, diff){
+  try{
+    const raw = localStorage.getItem(revealStorageKey(code, n, diff));
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {};
+}
+function saveRevealMap(){
+  try{
+    localStorage.setItem(revealStorageKey(state.code, state.n, state.diff), JSON.stringify(state.revealMap));
+  }catch(e){}
+}
+function getFlags(playerNum){
+  if(playerNum === state.myNum){
+    const all = {};
+    traitKeys.forEach(function(k){ all[k] = true; });
+    return all;
+  }
+  return state.revealMap[playerNum] || {};
+}
+function setFlag(playerNum, key, value){
+  if(!state.revealMap[playerNum]) state.revealMap[playerNum] = {};
+  state.revealMap[playerNum][key] = value;
+  saveRevealMap();
+}
+
+function hostCreate(){
+  const n = Math.max(3, Math.min(12, parseInt(document.getElementById('numPlayers').value)||6));
+  const diff = document.getElementById('difficulty').value;
+  const code = String(Math.floor(1000 + Math.random()*9000));
+  document.getElementById('codeDisplay').textContent = code;
+  document.getElementById('hostSummary').textContent = n + " players · " + diff + " difficulty";
+  window._hostState = { code, n, diff };
+  show('hostResult');
+}
+
+function goToJoinAsHost(){
+  document.getElementById('jNumPlayers').value = window._hostState.n;
+  document.getElementById('jDifficulty').value = window._hostState.diff;
+  document.getElementById('jCode').value = window._hostState.code;
+  document.getElementById('jPlayerNum').value = 1;
+  show('join');
+}
+
+function joinGame(){
+  const n = Math.max(3, Math.min(12, parseInt(document.getElementById('jNumPlayers').value)||6));
+  const diff = document.getElementById('jDifficulty').value;
+  const code = document.getElementById('jCode').value.trim();
+  const pnum = Math.max(1, Math.min(n, parseInt(document.getElementById('jPlayerNum').value)||1));
+  const warn = document.getElementById('joinWarn');
+  if(!/^\d{4}$/.test(code)){
+    warn.textContent = "Enter the 4-digit game code.";
+    return;
+  }
+  warn.textContent = "";
+  const game = generateGame(code, n, diff);
+
+  state = {
+    code: code, n: n, diff: diff, game: game,
+    myNum: pnum, viewingNum: pnum,
+    revealMap: loadRevealMap(code, n, diff)
+  };
+
+  document.getElementById('scenarioBox').innerHTML =
+    "<b>Catastrophe:</b> " + game.scenario + "<br><br><b>Bunker:</b> " + game.fact +
+    "<br><br><span style='color:var(--sub); font-size:.82rem;'>⚡ Each player can use their ability once per game, any time they choose.</span>";
+
+  renderPlayerView();
+  show('cardView');
+}
+
+function navPlayer(delta){
+  state.viewingNum = ((state.viewingNum - 1 + delta + state.n) % state.n) + 1;
+  renderPlayerView();
+}
+
+function renderPlayerView(){
+  const vn = state.viewingNum;
+  const isSelf = vn === state.myNum;
+  const p = state.game.players[vn-1];
+  const flags = getFlags(vn);
+
+  document.getElementById('navLabel').innerHTML =
+    "Viewing <b>Player " + vn + "</b>" + (isSelf ? " (you)" : "") + "<br>of " + state.n;
+
+  document.getElementById('traitsBox').innerHTML = traitKeys.map(function(k){
+    const label = traitLabels[k];
+    const val = p[k];
+    const shown = !!flags[k];
+    const abilityCls = k === 'ability' ? ' ability' : '';
+    if(isSelf){
+      return '<div class="trait'+abilityCls+'"><span class="k">'+label+'</span><span class="v self">'+val+'</span></div>';
+    }
+    const cls = shown ? "v" : "v hidden-v";
+    const eye = '<span class="eye">'+(shown ? "tap to re-hide" : "tap when told")+'</span>';
+    return '<div class="trait'+abilityCls+'" onclick="toggleTraitReveal(\''+k+'\')">' +
+      '<span class="k">'+label+'</span>' +
+      '<span>' + '<span class="'+cls+'">'+val+'</span>' + eye + '</span>' +
+      '</div>';
+  }).join('');
+
+  document.getElementById('cardHint').textContent = isSelf
+    ? "This is your own card — always visible to you."
+    : "Tap a trait once this player says it out loud. It stays revealed on your device from then on.";
+}
+
+function toggleTraitReveal(key){
+  if(state.viewingNum === state.myNum) return;
+  const current = getFlags(state.viewingNum)[key];
+  setFlag(state.viewingNum, key, !current);
+  renderPlayerView();
+}
+</script>
+</body>
+</html>
